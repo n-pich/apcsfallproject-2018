@@ -29,7 +29,7 @@ $debug
 ```
 
 ```
-// a way to toggle basic animation demonstration.
+// a way to toggle infinite looping
 $animating
 ```
 
@@ -61,7 +61,7 @@ $animating
 <img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/n1.png"  width = "250" />  <img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/arrow.png"  width = "120" /><img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/n2.png"  width = "250" />  
 
 **Press the 'g' Key**
-*Toggles $grid on & off. You must press either the corresponding number key again (will generate new random pair of patterns) or 'n' to toggle to the next pattern before you'll see the grid status change.*
+*Toggles $grid on & off.*
 
 <img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/GridOff.png"  width = "250" />  <img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/arrow.png"  width = "120" /><img src="https://raw.githubusercontent.com/riverpointacademy/apcsfallproject-2018/master/images/GridOn.png"  width = "250" />  
 
@@ -74,7 +74,7 @@ $animating
 *Saves the current frame to disk as "#####.png"*
 
 **Press the 'a' Key**
-*Shows a demo animation. It's gross, but it gives you an idea of how segment data can be used to change state and control animation.*
+*Toggles on and off infinite looping between patterns.*
 
 ## Built with Processing.java
 Get version [3.4](https://processing.org/download/)
@@ -318,9 +318,13 @@ void addAllPatterns()
 // these segments just get assinged new patterns.
 void shiftPatterns()
 
-// Method use to apply pattern n to the state s. s can be "start" or "end" corresponding
-// with the "start" and "end" angles for each Segment object.
-void mapPattern(int n, String s)
+// Method used to assign the current starting angle to the end angle and vice versa
+for(int i = 0; i<$cols*$rows; i++) {
+    float u = segments.get(i).getStartAngle();
+    segments.get(i).setStartAngle(segments.get(i).getEndAngle());
+    segments.get(i).setEndAngle(u);
+    segments.get(i).setCurrentAngle(segments.get(i).getStartAngle());
+}
 ```
 
 **Display Methods**
@@ -335,6 +339,84 @@ void showSegments(String s)
 void showNext()
 ```
 
+## API Reference - Animation (Inside Draw)
+**Description** This is a short series of if statements that check what angle the segments should be at and animates accordingly.
+
+**Instance Data**
+```
+//Holds value of the current angle that can be changed
+float u = director.segments.get(i).getCurrentAngle();
+
+//This controls the time between animations while infinitely looping
+int wait = 75;
+
+//This is the variable that acts as the alarm clock for infinite looping
+int counter = wait;
+
+//Toggles infinite loop
+boolean loop = false;
+
+//The speed the segments rotate at
+float speed = 0.055;
+```
+**The Code (With comments!)**
+```
+//$animating will always be true
+if ($animating) {
+  //Draws grid
+    if ($grid) { 
+      drawGrid($gridWidth);
+    };
+
+    pushMatrix();
+    translate($borderWidth, $borderWidth);
+    for (int i = 0; i<$cols*$rows; i++) {
+      float u = director.segments.get(i).getCurrentAngle();
+
+      //For debugging
+      if (print) {
+        println("Start angle: "+director.segments.get(0).getStartAngle());
+        println("Current angle: "+director.segments.get(0).getCurrentAngle());
+        println("End angle: "+director.segments.get(0).getEndAngle());
+        println();
+        print = false;
+      }
+
+      //Checks if the segments needs to rotate clockwise
+      if (director.segments.get(i).getCurrentAngle() < director.segments.get(i).getEndAngle()) {
+        u+=speed;
+        //Locks the segment in place
+        if (u >= HALF_PI) {
+          u = HALF_PI;
+        }
+      }
+      //Checks if the segments needs to rotate counterclockwise
+      if (director.segments.get(i).getCurrentAngle() > director.segments.get(i).getEndAngle()) {
+        u-=speed;
+        //Locks the segment in place
+        if (u <= 0) {
+          u=0;
+        }
+      }
+
+      //Sets the current segment to the new angle and draws it
+      director.segments.get(i).setCurrentAngle(u);
+      director.segments.get(i).showCurrent();
+      director.showing = "current`";
+    }
+
+    popMatrix();
+
+    //This controls the infinite loop
+    if (counter == 0) {
+      director.showNext(); 
+      counter = wait;
+    }
+    if (loop) {
+      counter--;
+    }
+  }
+```      
 ## RA AP Computer Science Fall Project Expectations
 
 **Your task:**
